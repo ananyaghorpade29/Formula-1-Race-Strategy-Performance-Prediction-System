@@ -1,0 +1,28 @@
+
+# Data collection
+fastf1
+
+# Data analysis
+pandas
+numpy
+
+# Data visualization
+matplotlib
+seaborn
+plotly
+
+# Machine learning
+scikit-learn
+scipy
+joblib
+
+# Dashboard
+streamlit
+
+# Development and notebooks
+jupyter
+ipykernel
+
+# Utilities
+requests
+tqdm
