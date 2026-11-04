@@ -1,0 +1,44 @@
+FORMULA 1 DATA QUALITY REPORT
+==============================
+
+Total records: 2370
+Total columns: 24
+Matched tyre records: 2367
+Unmatched tyre records: 3
+Overlapping stint rows: 0
+
+Missing values by column:
+meeting_key              0
+session_key              0
+driver_number            0
+lap_number               0
+date_start               2
+duration_sector_1       13
+duration_sector_2        2
+duration_sector_3        3
+i1_speed               378
+i2_speed                 2
+is_pit_out_lap           0
+lap_duration             5
+segments_sector_1        2
+segments_sector_2        2
+segments_sector_3        2
+st_speed               479
+Season                   0
+GrandPrix                0
+stint_number             3
+compound                 3
+tyre_age_at_start        3
+tyre_age                 3
+average_sector_time      2
+average_speed            2
+
+Lap time statistics:
+count    2365.000000
+mean       89.725688
+std        10.875645
+min        76.330000
+25%        80.130000
+50%        82.579000
+75%        98.477000
+max       138.694000
