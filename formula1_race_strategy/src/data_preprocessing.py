@@ -38,13 +38,24 @@ if not lap_files:
         "No individual 2023 or 2024 lap files found in data/raw."
     )
 
+
 lap_data = []
+
+# Correct race names based on the raw filenames.
+# This prevents different circuits from being grouped together.
+race_name_mapping = {
+    "Austin": "United States (Austin)",
+    "Miami": "Miami",
+    "Las Vegas": "Las Vegas",
+    "Imola": "Emilia-Romagna",
+    "Monza": "Italy",
+}
 
 for filepath in lap_files:
 
     race_df = pd.read_csv(filepath)
 
-    # Check essential columns
+    # Check essential columns.
     required_lap_columns = [
         "session_key",
         "driver_number",
@@ -62,20 +73,34 @@ for filepath in lap_files:
             f"{filepath.name} is missing columns: {missing_columns}"
         )
 
-    # Add season and Grand Prix from filename if unavailable
+    # Extract season and race name from the filename.
+    # Example: 2023_Las Vegas_laps.csv
     filename_parts = filepath.stem.split("_", 1)
 
-    if "Season" not in race_df.columns:
-        race_df["Season"] = int(filename_parts[0])
+    season = int(filename_parts[0])
+    raw_race_name = filename_parts[1].removesuffix("_laps")
 
-    if "GrandPrix" not in race_df.columns:
-        race_df["GrandPrix"] = filename_parts[1]
+    # Apply the corrected race name where necessary.
+    grand_prix = race_name_mapping.get(
+        raw_race_name,
+        raw_race_name
+    )
 
+    # Always use filename-derived values.
+    # This overrides incorrect existing OpenF1 labels.
+    race_df["Season"] = season
+    race_df["GrandPrix"] = grand_prix
+
+    # Keep the original filename for traceability.
     race_df["source_file"] = filepath.name
 
     lap_data.append(race_df)
 
-    print(f"Loaded {filepath.name}: {race_df.shape}")
+    print(
+        f"Loaded {filepath.name}: "
+        f"{race_df.shape} | "
+        f"Race: {grand_prix}"
+    )
 
 laps = pd.concat(lap_data, ignore_index=True)
 

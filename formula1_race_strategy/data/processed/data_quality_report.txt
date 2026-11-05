@@ -21,48 +21,53 @@ Season
 2024    26629
 
 Records by Grand Prix:
-Season  GrandPrix           
-2023    Australia               1006
-        Austria                 1355
-        Azerbaijan               963
-        Bahrain                 1058
-        Belgium                  817
-        Brazil                  1112
-        Canada                  1318
-        Hungary                 1255
-        Italy                    968
-        Japan                    886
-        Mexico                  1286
-        Monaco                  1516
-        Netherlands             1344
-        Qatar                   1009
-        Saudi Arabia             945
-        Singapore               1091
-        Spain                   1312
-        United Arab Emirates    1159
-        United Kingdom           974
-        United States           3105
-2024    Australia                998
-        Austria                 1407
-        Azerbaijan               975
-        Bahrain                 1129
-        Belgium                  842
-        Brazil                  1137
-        Canada                  1272
-        China                   1033
-        Hungary                 1356
-        Italy                   2248
-        Japan                    908
-        Mexico                  1216
-        Monaco                  1237
-        Netherlands             1426
-        Qatar                    944
-        Saudi Arabia             902
-        Singapore               1179
-        Spain                   1310
-        United Arab Emirates    1037
-        United Kingdom           962
-        United States           3111
+Season  GrandPrix             
+2023    Bahrain                   1058
+        Baku                       963
+        Hungaroring               1255
+        Interlagos                1112
+        Italy                      968
+        Jeddah                     945
+        Las Vegas                  949
+        Lusail                    1009
+        Melbourne                 1006
+        Mexico City               1286
+        Miami                     1139
+        Monte Carlo               1516
+        Montreal                  1318
+        Silverstone                974
+        Singapore                 1091
+        Spa-Francorchamps          817
+        Spain                     1312
+        Spielberg                 1355
+        Suzuka                     886
+        United States (Austin)    1017
+        Yas Marina Circuit        1159
+        Zandvoort                 1344
+2024    Baku                       975
+        Catalunya                 1310
+        Emilia-Romagna            1239
+        Hungaroring               1356
+        Interlagos                1137
+        Italy                     1009
+        Jeddah                     902
+        Las Vegas                  940
+        Lusail                     944
+        Melbourne                  998
+        Mexico City               1216
+        Miami                     1112
+        Monte Carlo               1237
+        Montreal                  1272
+        Sakhir                    1129
+        Shanghai                  1033
+        Silverstone                962
+        Singapore                 1179
+        Spa-Francorchamps          842
+        Spielberg                 1407
+        Suzuka                     908
+        United States (Austin)    1059
+        Yas Marina Circuit        1037
+        Zandvoort                 1426
 
 Missing values by column:
 Invalid stint records excluded: 28
