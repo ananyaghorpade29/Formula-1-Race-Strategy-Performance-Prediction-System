@@ -1,38 +1,87 @@
-
 import os
+from pathlib import Path
+
 import pandas as pd
+
 
 # ==========================================
 # 1. PROJECT DIRECTORIES
 # ==========================================
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = Path(__file__).resolve().parent.parent
 
-RAW_DIR = os.path.join(BASE_DIR, "data", "raw")
-PROCESSED_DIR = os.path.join(BASE_DIR, "data", "processed")
+RAW_DIR = BASE_DIR / "data" / "raw"
+PROCESSED_DIR = BASE_DIR / "data" / "processed"
 
-os.makedirs(PROCESSED_DIR, exist_ok=True)
+PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
 
-INPUT_FILE = os.path.join(RAW_DIR, "f1_combined_laps.csv")
-CLEANED_FILE = os.path.join(PROCESSED_DIR, "f1_cleaned_laps.csv")
-ML_FILE = os.path.join(PROCESSED_DIR, "f1_ml_ready.csv")
-REPORT_FILE = os.path.join(PROCESSED_DIR, "data_quality_report.txt")
+CLEANED_FILE = PROCESSED_DIR / "f1_cleaned_laps.csv"
+ML_FILE = PROCESSED_DIR / "f1_ml_ready.csv"
+REPORT_FILE = PROCESSED_DIR / "data_quality_report.txt"
+
+SUPPORTED_SEASONS = {"2023", "2024"}
 
 
 # ==========================================
-# 2. LOAD LAP DATA
+# 2. DISCOVER AND LOAD RACE LAP FILES
 # ==========================================
 
 print("\n========== LOADING LAP DATA ==========")
 
-if not os.path.exists(INPUT_FILE):
+lap_files = sorted(
+    file for file in RAW_DIR.glob("*_laps.csv")
+    if file.name[:4] in SUPPORTED_SEASONS
+)
+
+if not lap_files:
     raise FileNotFoundError(
-        f"Combined lap dataset not found: {INPUT_FILE}"
+        "No individual 2023 or 2024 lap files found in data/raw."
     )
 
-laps = pd.read_csv(INPUT_FILE)
+lap_data = []
 
-print("Lap dataset loaded:", laps.shape)
+for filepath in lap_files:
+
+    race_df = pd.read_csv(filepath)
+
+    # Check essential columns
+    required_lap_columns = [
+        "session_key",
+        "driver_number",
+        "lap_number",
+        "lap_duration"
+    ]
+
+    missing_columns = [
+        column for column in required_lap_columns
+        if column not in race_df.columns
+    ]
+
+    if missing_columns:
+        raise ValueError(
+            f"{filepath.name} is missing columns: {missing_columns}"
+        )
+
+    # Add season and Grand Prix from filename if unavailable
+    filename_parts = filepath.stem.split("_", 1)
+
+    if "Season" not in race_df.columns:
+        race_df["Season"] = int(filename_parts[0])
+
+    if "GrandPrix" not in race_df.columns:
+        race_df["GrandPrix"] = filename_parts[1]
+
+    race_df["source_file"] = filepath.name
+
+    lap_data.append(race_df)
+
+    print(f"Loaded {filepath.name}: {race_df.shape}")
+
+laps = pd.concat(lap_data, ignore_index=True)
+
+print("\nCombined lap dataset:", laps.shape)
+print("Race files loaded:", len(lap_files))
+print("Seasons:", sorted(laps["Season"].dropna().unique()))
 
 
 # ==========================================
@@ -41,29 +90,14 @@ print("Lap dataset loaded:", laps.shape)
 
 print("\n========== DATA CLEANING ==========")
 
-# Remove duplicate lap records
-key_columns = [
+numeric_columns = [
     "session_key",
     "driver_number",
-    "lap_number"
-]
-
-if all(column in laps.columns for column in key_columns):
-    laps = laps.drop_duplicates(
-        subset=key_columns,
-        keep="first"
-    )
-else:
-    laps = laps.drop_duplicates()
-
-# Convert numeric columns
-numeric_columns = [
+    "lap_number",
     "lap_duration",
     "duration_sector_1",
     "duration_sector_2",
     "duration_sector_3",
-    "lap_number",
-    "driver_number",
     "i1_speed",
     "i2_speed",
     "st_speed"
@@ -76,13 +110,30 @@ for column in numeric_columns:
             errors="coerce"
         )
 
-# Remove invalid lap durations, but retain missing values
-if "lap_duration" in laps.columns:
-    laps = laps[
-        laps["lap_duration"].isna()
-        | (laps["lap_duration"] > 0)
-    ]
+# Remove duplicate lap records
+key_columns = [
+    "session_key",
+    "driver_number",
+    "lap_number"
+]
 
+before_duplicates = len(laps)
+
+laps = laps.drop_duplicates(
+    subset=key_columns,
+    keep="first"
+)
+
+duplicates_removed = before_duplicates - len(laps)
+
+# Remove invalid non-positive lap times.
+# Missing lap times are retained for data-quality reporting.
+laps = laps[
+    laps["lap_duration"].isna()
+    | (laps["lap_duration"] > 0)
+].copy()
+
+print("Duplicate records removed:", duplicates_removed)
 print("Cleaned lap dataset:", laps.shape)
 
 # Save cleaned lap data
@@ -92,48 +143,59 @@ print("Cleaned data saved:", CLEANED_FILE)
 
 
 # ==========================================
-# 4. LOAD TYRE STINT DATA
+# 4. DISCOVER AND LOAD TYRE STINT FILES
 # ==========================================
 
 print("\n========== LOADING TYRE STINT DATA ==========")
 
-stint_files = [
-    "2023_Bahrain_stints.csv",
-    "2023_Spain_stints.csv"
-]
-
 stint_data = []
+missing_stint_files = []
 
-for filename in stint_files:
+for lap_file in lap_files:
 
-    filepath = os.path.join(RAW_DIR, filename)
+    # Example:
+    # 2023_Bahrain_laps.csv
+    # becomes:
+    # 2023_Bahrain_stints.csv
 
-    if not os.path.exists(filepath):
-        raise FileNotFoundError(
-            f"Stint file not found: {filepath}"
-        )
+    stint_filename = lap_file.name.replace(
+        "_laps.csv",
+        "_stints.csv"
+    )
 
-    stint_df = pd.read_csv(filepath)
+    stint_filepath = RAW_DIR / stint_filename
 
-    print(filename, ":", stint_df.shape)
+    if not stint_filepath.exists():
+        missing_stint_files.append(stint_filename)
+        print("WARNING: Stint file not found:", stint_filename)
+        continue
+
+    stint_df = pd.read_csv(stint_filepath)
+
+    stint_df["source_file"] = stint_filename
+
+    print(f"Loaded {stint_filename}: {stint_df.shape}")
 
     stint_data.append(stint_df)
 
-stints = pd.concat(
-    stint_data,
-    ignore_index=True
-)
+if not stint_data:
+    raise FileNotFoundError(
+        "No matching tyre stint files were found."
+    )
 
-print("Combined stint dataset:", stints.shape)
+stints = pd.concat(stint_data, ignore_index=True)
+
+print("\nCombined stint dataset:", stints.shape)
+print("Stint files loaded:", len(stint_data))
 
 
 # ==========================================
-# 5. EXPAND STINTS INTO INDIVIDUAL LAPS
+# 5. VALIDATE AND EXPAND STINT DATA
 # ==========================================
 
 print("\n========== PREPARING TYRE INFORMATION ==========")
 
-required_columns = [
+required_stint_columns = [
     "session_key",
     "driver_number",
     "stint_number",
@@ -143,29 +205,47 @@ required_columns = [
     "tyre_age_at_start"
 ]
 
-for column in required_columns:
+for column in required_stint_columns:
     if column not in stints.columns:
         raise ValueError(
             f"Missing required stint column: {column}"
         )
 
-for column in [
+numeric_stint_columns = [
     "session_key",
     "driver_number",
     "stint_number",
     "lap_start",
     "lap_end",
     "tyre_age_at_start"
-]:
+]
+
+for column in numeric_stint_columns:
     stints[column] = pd.to_numeric(
         stints[column],
         errors="coerce"
     )
 
-if stints[required_columns].isna().any().any():
+if stints[required_stint_columns].isna().any().any():
     raise ValueError(
         "Missing or invalid values found in required stint columns."
     )
+
+# Identify invalid stint lap ranges
+invalid_stints = (
+    (stints["lap_start"] < 1)
+    | (stints["lap_end"] < stints["lap_start"])
+)
+
+invalid_stint_count = int(invalid_stints.sum())
+
+print("Invalid stint records found:", invalid_stint_count)
+
+# Exclude invalid stint records
+stints = stints.loc[~invalid_stints].copy()
+
+print("Valid stint records remaining:", len(stints))
+print("Invalid stint records excluded:", invalid_stint_count)
 
 stint_laps = []
 
@@ -173,9 +253,6 @@ for _, stint in stints.iterrows():
 
     start_lap = int(stint["lap_start"])
     end_lap = int(stint["lap_end"])
-
-    if end_lap < start_lap:
-        raise ValueError("Invalid stint lap range found.")
 
     for lap_number in range(start_lap, end_lap + 1):
 
@@ -224,7 +301,7 @@ print("Overlapping stint rows:", overlap_count)
 if overlap_count > 0:
     raise ValueError(
         "Overlapping stint ranges detected. "
-        "Please inspect the original stint data."
+        "Please inspect the original stint files."
     )
 
 
@@ -234,21 +311,6 @@ if overlap_count > 0:
 
 print("\n========== MERGING DATASETS ==========")
 
-laps["lap_number"] = pd.to_numeric(
-    laps["lap_number"],
-    errors="coerce"
-)
-
-laps["session_key"] = pd.to_numeric(
-    laps["session_key"],
-    errors="coerce"
-)
-
-laps["driver_number"] = pd.to_numeric(
-    laps["driver_number"],
-    errors="coerce"
-)
-
 ml_data = laps.merge(
     stint_laps_df,
     on=join_keys,
@@ -256,12 +318,19 @@ ml_data = laps.merge(
     validate="one_to_one"
 )
 
-matched = ml_data["compound"].notna().sum()
-unmatched = ml_data["compound"].isna().sum()
+matched = int(ml_data["compound"].notna().sum())
+unmatched = int(ml_data["compound"].isna().sum())
 
 print("Total lap records:", len(ml_data))
 print("Matched lap records:", matched)
 print("Unmatched lap records:", unmatched)
+
+match_percentage = (
+    matched / len(ml_data) * 100
+    if len(ml_data) > 0 else 0
+)
+
+print(f"Tyre matching percentage: {match_percentage:.2f}%")
 
 
 # ==========================================
@@ -287,7 +356,7 @@ if available_sectors:
         ml_data[available_sectors].mean(axis=1)
     )
 
-# Total speed indicator from available speed traps
+# Average speed from available speed traps
 speed_columns = [
     "i1_speed",
     "i2_speed",
@@ -304,13 +373,11 @@ if available_speeds:
         ml_data[available_speeds].mean(axis=1)
     )
 
-# Encode tyre compound as a categorical feature
+# Keep compound as a categorical value
 if "compound" in ml_data.columns:
-    ml_data["compound"] = (
-        ml_data["compound"].astype("category")
-    )
+    ml_data["compound"] = ml_data["compound"].astype("category")
 
-print("New features created where source data was available.")
+print("Feature engineering completed.")
 
 
 # ==========================================
@@ -333,19 +400,58 @@ with open(REPORT_FILE, "w", encoding="utf-8") as report:
     report.write("FORMULA 1 DATA QUALITY REPORT\n")
     report.write("==============================\n\n")
 
-    report.write(f"Total records: {len(ml_data)}\n")
-    report.write(f"Total columns: {len(ml_data.columns)}\n")
-    report.write(f"Matched tyre records: {matched}\n")
-    report.write(f"Unmatched tyre records: {unmatched}\n")
-    report.write(f"Overlapping stint rows: {overlap_count}\n\n")
+    report.write(f"Lap files loaded: {len(lap_files)}\n")
+    report.write(f"Stint files loaded: {len(stint_data)}\n")
+    report.write(f"Missing stint files: {len(missing_stint_files)}\n")
 
-    report.write("Missing values by column:\n")
+    report.write(
+        f"Total records: {len(ml_data)}\n"
+    )
+    report.write(
+        f"Total columns: {len(ml_data.columns)}\n"
+    )
+    report.write(
+        f"Duplicate records removed: {duplicates_removed}\n"
+    )
+    report.write(
+        f"Matched tyre records: {matched}\n"
+    )
+    report.write(
+        f"Unmatched tyre records: {unmatched}\n"
+    )
+    report.write(
+        f"Tyre matching percentage: {match_percentage:.2f}%\n"
+    )
+    report.write(
+        f"Overlapping stint rows: {overlap_count}\n\n"
+    )
+
+    report.write("Missing stint files:\n")
+    report.write(
+        "\n".join(missing_stint_files)
+        if missing_stint_files else "None"
+    )
+
+    report.write("\n\nRecords by season:\n")
+    report.write(
+        ml_data["Season"].value_counts().sort_index().to_string()
+    )
+
+    report.write("\n\nRecords by Grand Prix:\n")
+    report.write(
+        ml_data.groupby(
+            ["Season", "GrandPrix"],
+            observed=True
+        ).size().to_string()
+    )
+
+    report.write("\n\nMissing values by column:\n")
+    report.write(f"Invalid stint records excluded: {invalid_stint_count}\n")
     report.write(
         ml_data.isnull().sum().to_string()
     )
 
     report.write("\n\nLap time statistics:\n")
-
     report.write(
         ml_data["lap_duration"].describe().to_string()
     )
@@ -358,11 +464,17 @@ print("Data quality report saved:", REPORT_FILE)
 # ==========================================
 
 print("\n==========================================")
-print("PHASE 3 PREPROCESSING COMPLETED")
+print("MULTI-SEASON PREPROCESSING COMPLETED")
 print("==========================================")
 
+print("Seasons included:", sorted(ml_data["Season"].dropna().unique()))
+print("Race files loaded:", len(lap_files))
+print("Stint files loaded:", len(stint_data))
 print("Final dataset dimensions:", ml_data.shape)
 print("Valid lap times:", ml_data["lap_duration"].notna().sum())
+
+print("\nRecords by season:")
+print(ml_data["Season"].value_counts().sort_index())
 
 print("\nTyre compound distribution:")
 print(ml_data["compound"].value_counts(dropna=False))

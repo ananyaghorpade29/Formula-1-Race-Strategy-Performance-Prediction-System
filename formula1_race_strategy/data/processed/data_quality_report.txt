@@ -1,44 +1,103 @@
 FORMULA 1 DATA QUALITY REPORT
 ==============================
 
-Total records: 2370
-Total columns: 24
-Matched tyre records: 2367
-Unmatched tyre records: 3
+Lap files loaded: 46
+Stint files loaded: 46
+Missing stint files: 0
+Total records: 51108
+Total columns: 25
+Duplicate records removed: 0
+Matched tyre records: 50975
+Unmatched tyre records: 133
+Tyre matching percentage: 99.74%
 Overlapping stint rows: 0
 
+Missing stint files:
+None
+
+Records by season:
+Season
+2023    24479
+2024    26629
+
+Records by Grand Prix:
+Season  GrandPrix           
+2023    Australia               1006
+        Austria                 1355
+        Azerbaijan               963
+        Bahrain                 1058
+        Belgium                  817
+        Brazil                  1112
+        Canada                  1318
+        Hungary                 1255
+        Italy                    968
+        Japan                    886
+        Mexico                  1286
+        Monaco                  1516
+        Netherlands             1344
+        Qatar                   1009
+        Saudi Arabia             945
+        Singapore               1091
+        Spain                   1312
+        United Arab Emirates    1159
+        United Kingdom           974
+        United States           3105
+2024    Australia                998
+        Austria                 1407
+        Azerbaijan               975
+        Bahrain                 1129
+        Belgium                  842
+        Brazil                  1137
+        Canada                  1272
+        China                   1033
+        Hungary                 1356
+        Italy                   2248
+        Japan                    908
+        Mexico                  1216
+        Monaco                  1237
+        Netherlands             1426
+        Qatar                    944
+        Saudi Arabia             902
+        Singapore               1179
+        Spain                   1310
+        United Arab Emirates    1037
+        United Kingdom           962
+        United States           3111
+
 Missing values by column:
-meeting_key              0
-session_key              0
-driver_number            0
-lap_number               0
-date_start               2
-duration_sector_1       13
-duration_sector_2        2
-duration_sector_3        3
-i1_speed               378
-i2_speed                 2
-is_pit_out_lap           0
-lap_duration             5
-segments_sector_1        2
-segments_sector_2        2
-segments_sector_3        2
-st_speed               479
-Season                   0
-GrandPrix                0
-stint_number             3
-compound                 3
-tyre_age_at_start        3
-tyre_age                 3
-average_sector_time      2
-average_speed            2
+Invalid stint records excluded: 28
+meeting_key               0
+session_key               0
+driver_number             0
+lap_number                0
+date_start               32
+duration_sector_1       387
+duration_sector_2       140
+duration_sector_3       240
+i1_speed               7974
+i2_speed                163
+is_pit_out_lap            0
+lap_duration            204
+segments_sector_1        66
+segments_sector_2        78
+segments_sector_3        94
+st_speed               4383
+Season                    0
+GrandPrix                 0
+source_file               0
+stint_number            133
+compound                133
+tyre_age_at_start       133
+tyre_age                133
+average_sector_time     120
+average_speed           105
 
 Lap time statistics:
-count    2365.000000
-mean       89.725688
-std        10.875645
-min        76.330000
-25%        80.130000
-50%        82.579000
-75%        98.477000
-max       138.694000
+count    50904.000000
+mean        95.845109
+std         81.158606
+min         67.012000
+25%         81.767750
+50%         89.801000
+75%         99.243000
+max       2625.541000

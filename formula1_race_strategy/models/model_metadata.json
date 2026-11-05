@@ -1,0 +1,32 @@
+{
+    "project": "Formula 1 Race Strategy and Performance Prediction System",
+    "target": "lap_duration",
+    "best_model": "Linear Regression",
+    "features": [
+        "lap_number",
+        "tyre_age",
+        "stint_number",
+        "is_pit_out_lap",
+        "driver_number",
+        "compound",
+        "GrandPrix",
+        "Season"
+    ],
+    "numeric_features": [
+        "lap_number",
+        "tyre_age",
+        "stint_number",
+        "is_pit_out_lap"
+    ],
+    "categorical_features": [
+        "driver_number",
+        "compound",
+        "GrandPrix",
+        "Season"
+    ],
+    "maximum_lap_time_seconds": 180,
+    "excluded_training_records": 405,
+    "selection_metric": "Lowest mean race-based cross-validation MAE",
+    "cross_validation": "5-fold GroupKFold",
+    "training_records": 50703
+}
